@@ -1,4 +1,4 @@
-﻿# Team Task Manager – WordPress Plugin
+# Team Task Manager – WordPress Plugin
 
 ## 📌 Overview
 This WordPress plugin powers the backend of the **Team Task Manager** system, which supports a React-based frontend via custom REST APIs and secure JWT authentication.
@@ -107,6 +107,15 @@ register_rest_route('teamtask/v1', '/teams', [
 ```php
 define('JWT_AUTH_SECRET_KEY', 'your-strong-secret');
 define('JWT_AUTH_CORS_ENABLE', true);
+```
+5. ✅ Add this to your `.htaccess` file above `# BEGIN WordPress` to ensure JWT and REST requests route correctly:
+```apache
+# Fix REST API for WP JSON + JWT
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^wp-json/?$ index.php?rest_route=/ [L,QSA]
+RewriteRule ^wp-json/(.*)? index.php?rest_route=/$1 [L,QSA]
+</IfModule>
 ```
 
 ---
