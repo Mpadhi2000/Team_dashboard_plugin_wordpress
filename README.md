@@ -1,130 +1,147 @@
-# Team Task Manager – WordPress Plugin
+# Team Dashboard Frontend (React + JWT)
 
-## 📌 Overview
-This WordPress plugin powers the backend of the **Team Task Manager** system, which supports a React-based frontend via custom REST APIs and secure JWT authentication.
+## 📌 Project Overview
+This is the frontend React application for the **Team Task Manager** project. It acts as a headless dashboard to manage teams and tasks, communicating with a WordPress backend that uses JWT (JSON Web Token) for authentication.
 
-It enables management of **teams** and **tasks**, along with role-based access control using WordPress user roles (Administrator and Team Member).
+The app supports role-based access, giving Admins full control and Team Members limited view access.
 
 ---
+
+## ⚠️ Important: Installing Dependencies
+
+When you first set up this project, **please install node modules using this command** to avoid peer dependency conflicts (especially with React 19):
+
+```bash
+npm install --legacy-peer-deps
+```
+
+This ensures smooth installation and avoids errors related to package version conflicts.
+
+---
+
+## 🌐 API Base URLs
+
+Make sure to update the API URLs to match your environment.
+
+**Default examples:**
+
+- Base API: `http://team-dashboard-project.local/wp-json/teamtask/v1`
+- JWT Login: `http://team-dashboard-project.local/wp-json/jwt-auth/v1/token`
+
+👉 Replace `http://team-dashboard-project.local/` with your local or live WordPress site URL in `axios.jsx`.
+
+---
+
 
 ## 🎯 Purpose
-- Expose secure REST API endpoints for team and task management
-- Authenticate users using JWT tokens
-- Support role-based access to control API visibility
+
+- Build a responsive task management frontend using React 19 (Vite)
+- Allow login via WordPress JWT authentication
+- Support protected routes based on user roles (Admin, Team Member)
+- Enable Admins to manage teams, tasks, and assignments
+- Allow Team Members to view their assigned tasks only
 
 ---
 
-## 🧱 Plugin Structure
-```
-team-task-manager/
-├── team-task-manager.php        # Main plugin entry point
-├── api/
-│   ├── auth-routes.php          # JWT login/logout routes
-│   └── rest-routes.php          # Custom task/team REST APIs
-├── admin/
-│   └── admin-pages.php          # (Optional) Admin interface (future)
-├── includes/
-│   └── uninstall.php            # Table cleanup on uninstall
-```
+## 🛠 Tech Stack
+
+- **Frontend**: React 19 (Vite)
+- **Authentication**: JWT (token stored in localStorage)
+- **Routing**: React Router DOM v7
+- **UI Components**: Plain React (optional Bootstrap integration)
+- **Backend**: WordPress exposing custom REST API + JWT plugin
 
 ---
 
-## 🔐 Authentication Endpoints (`auth-routes.php`)
-| Method | Endpoint                          | Description                                         |
-|--------|-----------------------------------|-----------------------------------------------------|
-| POST   | `/wp-json/jwt-auth/v1/token`      | Login with username & password → returns JWT token |
-| GET    | `/wp-json/wp/v2/users/me`         | Get current logged-in user info (requires token)   |
+## 👥 Role-Based Access
 
-✅ Includes a `rest_prepare_user` filter to expose roles:
-```php
-add_filter('rest_prepare_user', function ($response, $user, $request) {
-  if (get_current_user_id() === $user->ID) {
-    $response->data['roles'] = $user->roles;
-  }
-  return $response;
-}, 10, 3);
-```
+| Role          | Access                                           |
+|---------------|--------------------------------------------------|
+| Administrator | Full dashboard: manage teams, tasks, assignments |
+| Team Member   | Limited to viewing only assigned tasks           |
 
 ---
 
-## 📁 Team Endpoints (`rest-routes.php`)
-Namespace: `/wp-json/teamtask/v1/`
+## 🧱 Folder Structure
 
-### 🧩 Team Routes
-| Method | Endpoint           | Description                |
-|--------|--------------------|----------------------------|
-| GET    | `/teams`           | Fetch all teams            |
-| POST   | `/teams`           | Create a new team          |
-| PUT    | `/teams/:id`       | Update team (if added)     |
-| DELETE | `/teams/:id`       | Delete team (if added)     |
-
-### 📋 Task Routes
-| Method | Endpoint           | Description                |
-|--------|--------------------|----------------------------|
-| GET    | `/tasks`           | Fetch all tasks            |
-| POST   | `/tasks`           | Create a new task          |
-| PUT    | `/tasks/:id`       | Update task (if added)     |
-| DELETE | `/tasks/:id`       | Delete task (if added)     |
-
----
-
-## 🔒 Role-Based API Protection (Optional)
-Restrict routes to only admins like this:
-```php
-'permission_callback' => function () {
-  $user = wp_get_current_user();
-  return in_array('administrator', $user->roles);
-}
 ```
-Example usage on a route:
-```php
-register_rest_route('teamtask/v1', '/teams', [
-  'methods' => 'GET',
-  'callback' => 'get_teams',
-  'permission_callback' => function () {
-    return current_user_can('edit_users');
-  }
-]);
+src/
+├── api/             # Axios instance + auth functions
+├── components/      # Sidebar, TeamList, TaskList, Forms
+├── pages/           # Login, AdminDashboard, TeamDashboard
+├── router/          # AppRoutes.jsx (handles route setup)
+├── App.jsx          # Main app (user state + routing)
+├── main.jsx         # Entry point with <BrowserRouter>
 ```
 
 ---
 
-## ✅ Summary of All Key Endpoints
-| Category         | Example Endpoint                    |
-|------------------|--------------------------------------|
-| 🔐 Login          | `/wp-json/jwt-auth/v1/token`         |
-| 🔍 Current User   | `/wp-json/wp/v2/users/me`            |
-| 📁 Teams          | `/wp-json/teamtask/v1/teams`         |
-| 📝 Tasks          | `/wp-json/teamtask/v1/tasks`         |
+## 🔐 Authentication Flow
+
+1. User logs in with WordPress credentials  
+2. `/jwt-auth/v1/token` returns JWT token  
+3. Token is stored in localStorage  
+4. `/wp/v2/users/me` fetches current user info including role  
+5. Routes render conditionally based on user role  
 
 ---
 
-## 🚀 Setup Instructions
-1. Place the `team-task-manager` folder inside `wp-content/plugins/`
-2. Activate the plugin from WP Admin → Plugins
-3. Make sure CORS and JWT headers are added in `.htaccess` or `init` hook
-4. Define the following in `wp-config.php`:
-```php
-define('JWT_AUTH_SECRET_KEY', 'your-strong-secret');
-define('JWT_AUTH_CORS_ENABLE', true);
+## 🚀 Tasks & Access Control
+
+| Route/Feature  | Access            | Description              |
+|----------------|-------------------|--------------------------|
+| `/login`       | Public            | Login screen             |
+| `/admin`       | Admin only        | Admin dashboard          |
+| `/teams`       | Admin only        | Manage teams             |
+| `/tasks`       | Admin + Team      | View tasks               |
+| `/addteam`     | Admin only        | Add new team             |
+| `/addtask`     | Admin only        | Add new task             |
+| `/assigntask`  | Admin only        | Assign tasks to teams    |
+| `/team`        | Team Member only  | Team dashboard           |
+
+---
+
+## ✅ How to Run
+
+1. Clone the repository  
+2. Run `npm install --legacy-peer-deps`  
+3. Start the development server:
+
+```bash
+npm run dev
 ```
-5. ✅ Add this to your `.htaccess` file above `# BEGIN WordPress` to ensure JWT and REST requests route correctly:
-```apache
-# Fix REST API for WP JSON + JWT
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteRule ^wp-json/?$ index.php?rest_route=/ [L,QSA]
-RewriteRule ^wp-json/(.*)? index.php?rest_route=/$1 [L,QSA]
-</IfModule>
-```
+
+✅ Make sure your WordPress backend is running with:
+- JWT plugin enabled
+- CORS properly configured
+- Secret key set in `wp-config.php`
 
 ---
 
-## 📫 Support
-For developer or HR review, please refer to the paired React app `README.md` and test the REST APIs using Postman.
+## 🧠 Why This Project Was Created
 
-Contact: `mayankpadhi91@gmail.com`
+- To demonstrate working with WordPress as a headless CMS  
+- To implement secure login via JWT  
+- To build modular and scalable React apps  
+- To apply role-based access control in frontend routing  
+- To collaborate professionally with backend APIs  
 
 ---
 
-_This plugin is part of the Team Task Manager full-stack assignment._
+## 🤝 Who Can Use This?
+
+- Frontend developers learning WordPress + React integration  
+- HR managers testing the UI  
+- Interviewers evaluating frontend skills  
+- Full-stack collaborators connecting backend and frontend  
+
+---
+
+## 📫 Contact
+
+For help or walkthrough, contact:  
+📧 **mayankpadhi91@gmail.com**
+
+---
+
+_This project is part of the full Team Task Manager assignment using WordPress (PHP) and React (JS)._
